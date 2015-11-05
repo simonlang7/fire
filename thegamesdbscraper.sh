@@ -69,7 +69,9 @@ parseArgs "$@"
 if [ "${BASENAME}" != "" ]; then
     BASENAME="${BASENAME}-"
 fi
-GAME_URLSEARCH="`echo $GAME | sed -e 's/ /+/g' -e 's/(.*)//g' -e 's/\[.*\]//g' | sed "s/'//g"`"
+
+# add the _ so we don't get transferred to the result page immediately
+GAME_URLSEARCH="`echo $GAME | sed -e 's/ /+/g' -e 's/(.*)//g' -e 's/\[.*\]//g' | sed "s/'//g"`+_"
 IMAGE_FILENAMEBASE="${BASENAME}`echo $GAME | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
 
 if [ "$GAME" == "" ]; then
@@ -113,20 +115,11 @@ if [ "$CHOICE" -ge 1 -a "$CHOICE" -lt "$COUNT" ]; then
         echo -n "Saving clear logo..."
         wget -q $CLEARLOGO_URL -O "$DESTINATION/${IMAGE_FILENAMEBASE}_clearlogo.png"
         echo " done."
-        CLEARLOGO_ABS_PATH="$DESTINATION/${IMAGE_FILENAMEBASE}_clearlogo.png"
-        if [[ "$CLEARLOGO_ABS_PATH" != /* ]]; then
-            CLEARLOGO_ABS_PATH="$(pwd)/$CLEARLOGO_ABS_PATH"
-        fi
-        echo "##clearlogo##$CLEARLOGO_ABS_PATH"
     fi
     if [ "$BOXFRONT_URL" != "" ]; then
         echo -n "Saving box front..."
         wget -q $BOXFRONT_URL -O "$DESTINATION/${IMAGE_FILENAMEBASE}_boxfront.jpg"
         echo " done."
-        BOXFRONT_ABS_PATH="$DESTINATION/${IMAGE_FILENAMEBASE}_boxfront.jpg"
-        if [[ "$BOXFRONT_ABS_PATH" != /* ]]; then
-            BOXFRONT_ABS_PATH="$(pwd)/$BOXFRONT_ABS_PATH"
-        fi
     fi
     
 

@@ -79,7 +79,7 @@ IMG_DEST="`realpath "$IMG_DEST"`"
 
 # Get game name
 GAMENAME_WITH_DR="`echo $ROMPATH | sed 's@.*/@@' | sed 's/....$//'`"
-GAME="`echo $ROMPATH | sed 's@.*/@@' | sed 's/....$//'`" # | sed 's/([EGJUSA]*)//'`"
+GAME="`echo $ROMPATH | sed 's@.*/@@' | sed 's/....$//' | sed -e 's/([EGJUSA]*)//' -e 's/\[.*\]//'`"
 
 EXTENSION="`echo $ROMPATH | sed 's/.*\(...\)$/\1/'`"
 case $EXTENSION in
