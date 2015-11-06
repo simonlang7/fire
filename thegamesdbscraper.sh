@@ -105,6 +105,14 @@ matchPlatform() {
         gba|GBA)
             MATCHED_PLATFORM="Nintendo Game Boy Advance"
             ;;
+            
+        md|MD|megadrive|genesis)
+            MATCHED_PLATFORM="Sega Mega Drive"
+            ;;
+            
+        sat|SAT|saturn)
+            MATCHED_PLATFORM="Sega Saturn"
+            ;;
         
         nds|NDS)
             MATCHED_PLATFORM="Nintendo DS"
@@ -182,6 +190,8 @@ for GAMEURL in $GAMEURLS; do
     shopt -s nocasematch
     if [[ "$NAME" == "${GAME_WITHOUT_DR}"* || "${GAME_WITHOUT_DR}" == "$NAME"* ]]; then
         NAME_CONTAINED="true"
+    else
+        NAME_CONTAINED="false"
     fi
     
     # Also check how long both strings are (and subtract the results - best if 0)

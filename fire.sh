@@ -6,7 +6,7 @@
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-r|--rom \"<Path to ROM>\"] [-s|--shdest <Path>] [-i|--imagedest <Path>] [-h|--help]"
+    echo "Usage: $APP_NAME [-r|--rom \"<Path to ROM>\"] [-s|--shdest <Path>] [-i|--imagedest <Path>] [-p|--platform <Platform>] [-h|--help]"
 }
 
 parseArgs() {
@@ -32,6 +32,11 @@ parseArgs() {
                 IMG_DEST="$2"
                 shift
                 ;;
+                
+            -p|--platform)
+                PLATFORM="$2"
+                shift
+                ;;
             
             *)
                 ;;
@@ -55,28 +60,88 @@ parseArgs() {
     fi
 }
 
+getCore() {
+    SYSTEM="$1"
+    case $SYSTEM in
+        nes)
+            CORE="fceumm"
+            ;;
+            
+        snes)
+            CORE="snes9x_next"
+            ;;
+        
+        n64)
+            CORE="mupen64plus"
+            ;;
+            
+        psx)
+            CORE="mednafen_psx"
+            ;;
+            
+        md|megadrive|genesis)
+            CORE="genesis_plus_ex"
+            ;;
+            
+        sat|saturn)
+            CORE="yabause"
+            ;;
+            
+        gb|gbc)
+            CORE="gambatte"
+            ;;
+            
+        gba)
+            CORE="vbam"
+            ;;
+            
+        nds)
+            CORE="desmume"
+            ;;
+            
+        psp)
+            CORE="ppsspp"
+            ;;
+            
+    esac
+
+}
+
 getPlatform() {
     EXTENSION="$1"
     case $EXTENSION in
-        smc|sfc|fig)
-            CORE="snes9x_next"
-            PLATFORM="snes"
-            ;;
-        
         nes)
-            CORE="fceumm"
             PLATFORM="nes"
             ;;
             
+        smc|sfc|fig)
+            PLATFORM="snes"
+            ;;
+        
         n64|z64|v64)
-            CORE="mupen64plus"
             PLATFORM="n64"
             ;;
             
         iso|cue)
-            CORE="mednafen_psx"
             PLATFORM="psx"
             ;;
+            
+        gb)
+            PLATFORM="gb"
+            ;;
+            
+        gbc)
+            PLATFORM="gbc"
+            ;;
+            
+        gba)
+            PLATFORM="gba"
+            ;;
+            
+        nds)
+            PLATFORM="nds"
+            ;;
+            
     esac
 }
 
@@ -94,7 +159,10 @@ processRom() {
     fi
 
     EXTENSION="`echo $ROMPATH | sed 's/.*\(...\)$/\1/'`"
-    getPlatform "$EXTENSION"
+    if [ "$PLATFORM" == "" ]; then
+        getPlatform "$EXTENSION"
+    fi
+    getCore $PLATFORM
 
     # Strip spaces and parentheses
     OUTPUT_BASE="${PLATFORM}-$(echo $ROMPATH | sed 's@.*/@@' | sed -e 's/....$//' -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g')"
@@ -102,6 +170,7 @@ processRom() {
 
     # TODO: check if file exists
     sed -e "s@#CORE#@$CORE@" -e "s@#ROM#@$ROMPATH@" "$SH_TEMPLATE" > "$SH_DEST/$OUTPUT_SH"
+    chmod +x "$SH_DEST/$OUTPUT_SH"
 
     # Get images
     "$SCRAPER" --game "${GAMENAME_WITH_DR}" --destination "${IMG_DEST}" --basename "$PLATFORM"
