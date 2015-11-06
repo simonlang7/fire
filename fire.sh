@@ -173,7 +173,7 @@ processRom() {
     chmod +x "$SH_DEST/$OUTPUT_SH"
 
     # Get images
-    "$SCRAPER" --game "${GAMENAME_WITH_DR}" --destination "${IMG_DEST}" --basename "$PLATFORM"
+    "$SCRAPER" --game "${GAMENAME_WITH_DR}" --destination "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM"
 
     IMAGE_PATH_BASE="${IMG_DEST}/${PLATFORM}-`echo "$GAMENAME_WITH_DR" | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
     IMAGE_PATH="${IMAGE_PATH_BASE}_clearlogo.png"

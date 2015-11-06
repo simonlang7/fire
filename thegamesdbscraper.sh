@@ -224,7 +224,7 @@ processGame() {
     GAME_SEARCH="$GAME"
     searchGame "$GAME_SEARCH"
     
-    until [[ $CHOICE =~ "^[0-9]+$" || $CHOICE == "" || $CHOICE == "-" ]]; do
+    until [[ $CHOICE =~ ^[0-9]+$ || $CHOICE == "" || $CHOICE == "-" ]]; do
         searchGame "$CHOICE"
     done
 
