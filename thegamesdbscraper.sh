@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# Author: Simon Lang
+# License: GPLv2
+
 
 TEXTRESET='\e[0m'
 BOLDGREEN='\e[1;32m'

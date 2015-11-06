@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# Author: Simon Lang
+# License: GPLv2
 
 APP_NAME="$0"
 
