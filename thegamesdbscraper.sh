@@ -15,7 +15,7 @@ BOLDCYAN='\e[1;36m'
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-g|--game \"<Game>\"] [-d|--destination <Path>] [-b|--basename <Image basename>] [-h|--help]"
+    echo "Usage: $APP_NAME [-g|--game \"<Game>\"] [-d|--destination <Path>] [-b|--basename <Image basename>] [-p|--platform <Platform>] [-h|--help]"
 }
 
 parseArgs() {
@@ -41,6 +41,11 @@ parseArgs() {
                 BASENAME="$2"
                 shift
                 ;;
+                
+            -p|--platform)
+                PLATFORM="$2"
+                shift
+                ;;
             
             *)
                 ;;
@@ -64,11 +69,66 @@ parseArgs() {
     fi
 }
 
-approxMatch() {
-    MATCH=100
-    ORIGINAL_NAME=$1
-    NAME=$2
-    # TODO: implement    
+matchPlatform() {
+    MATCHED_PLATFORM=""
+    if [ "$PLATFORM" == "" ]; then
+        PLATFORM="$BASENAME"
+    fi
+    
+    echo -e "Match platform: $PLATFORM\n\n"
+    
+    case $PLATFORM in
+        nes|NES)
+            MATCHED_PLATFORM="Nintendo Entertainment System (NES)"
+            ;;
+        
+        snes|SNES)
+            MATCHED_PLATFORM="Super Nintendo (SNES)"
+            ;;
+        
+        n64|N64)
+            MATCHED_PLATFORM="Nintendo 64"
+            ;;
+        
+        psx|PSX)
+            MATCHED_PLATFORM="Sony Playstation"
+            ;;
+        
+        gb|GB)
+            MATCHED_PLATFORM="Nintendo Game Boy"
+            ;;
+        
+        gbc|GBC)
+            MATCHED_PLATFORM="Nintendo Game Boy Color"
+            ;;
+        
+        gba|GBA)
+            MATCHED_PLATFORM="Nintendo Game Boy Advance"
+            ;;
+        
+        nds|NDS)
+            MATCHED_PLATFORM="Nintendo DS"
+            ;;
+        
+        ps2|PS2)
+            MATCHED_PLATFORM="Sony Playstation 2"
+            ;;
+        
+        psp|PSP)
+            MATCHED_PLATFORM="Sony PSP"
+            ;;
+            
+        *)
+            ;;
+        
+    esac
+}
+
+stringLengthDistance() {
+    STR1="$1"
+    STR2="$2"
+    
+    STRLENDIST="`echo $((${#STR1} - ${#STR2})) | tr -d '-'`"
 }
 
 # Default settings
@@ -86,12 +146,16 @@ fi
 
 echo -e "\n\n${BOLDCYAN}Processing $GAME ($BASENAME)${TEXTRESET}\n"
 
+# In order to get a default choice...
+matchPlatform
+
 if [ "${BASENAME}" != "" ]; then
     BASENAME="${BASENAME}-"
 fi
 
 # add the _ so we don't get transferred to the result page immediately
 GAME_URLSEARCH="`echo $GAME | sed -e 's/ /+/g' -e 's/(.*)//g' -e 's/\[.*\]//g' -e "s/'//g" -e 's/&/%26/g'`+_"
+GAME_WITHOUT_DR="`echo $GAME | sed -e 's/(.*)//g' -e 's/\[.*\]//g'`"
 IMAGE_FILENAMEBASE="${BASENAME}`echo $GAME | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
 
 # Search TheGamesDB
@@ -100,21 +164,65 @@ TEMP_GAME="$DESTINATION/temp_game.html"
 wget -q http://thegamesdb.net/search/?string=$GAME_URLSEARCH -O ${TEMP_SEARCH}
 
 # Check results
-GAMEURLS="`grep "http://thegamesdb.net/game/" ${TEMP_SEARCH} | sed 's/^.*a href="//g' | sed 's/".*//g'`"
+GAMEURLS="`grep "http://thegamesdb.net/game/" ${TEMP_SEARCH} | grep "h3 style" | sed 's/^.*a href="//g' | sed 's/".*//g'`"
 COUNT=1
+PREFERRED_CHOICE=""
+BEST_STRLENDIST="100"
+
 for GAMEURL in $GAMEURLS; do
-    NAME="`grep "$GAMEURL" ${TEMP_SEARCH} | perl -pe 's/<.*?>//g'`"
+    # Get name, ID and system/platform of the current match
+    NAME="`grep "$GAMEURL" ${TEMP_SEARCH} | grep "h3 style" | perl -pe 's/<.*?>//g'`"
     ID="`echo $GAMEURL | sed 's@http://thegamesdb.net/game/\(.*\)/@\1@'`"
-    PLATFORM="`sed -n '/h3 style.*'$ID'/,/consoles/p' ${TEMP_SEARCH} | tail -1 | sed 's/.*href=.*">\(.*\)<\/a>.*/\1/'`"
-    printf "(%2d) %s (%s)\n" "$COUNT" "$NAME" "$PLATFORM"
+    SYSTEM="`sed -n '/h3 style.*'$ID'/,/consoles/p' ${TEMP_SEARCH} | tail -1 | sed 's/.*href=.*">\(.*\)<\/a>.*/\1/'`"
+    
+    
+    # Now find out whether this is the best match we can find
+    
+    # Is the full name of the rom contained in the match, or vice versa?
+    shopt -s nocasematch
+    if [[ "$NAME" == "${GAME_WITHOUT_DR}"* || "${GAME_WITHOUT_DR}" == "$NAME"* ]]; then
+        NAME_CONTAINED="true"
+    fi
+    
+    # Also check how long both strings are (and subtract the results - best if 0)
+    stringLengthDistance "$NAME" "${GAME_WITHOUT_DR}"
+    
+    # We only consider it a good match if the platform is the same
+    if [ "$MATCHED_PLATFORM" == "$SYSTEM" ]; then
+        # If we don't have any good match yet, this'll be it.
+        # Otherwise, it's only better if the full name is contained (see above) AND the string length distance is better
+        if [ "$PREFERRED_CHOICE" == "" -o "$NAME_CONTAINED" == "true" -a "$STRLENDIST" -lt "$BEST_STRLENDIST" ]; then
+            PREFERRED_CHOICE=$COUNT
+            PREFERRED_STRING=" ($COUNT)"
+            BEST_STRLENDIST="$STRLENDIST"
+        fi
+    fi
+    
+    # Save result to MATCHLIST array
+    MATCHLIST[$(($COUNT-1))]="`printf "(%2d) %s (%s)\n" "$COUNT" "$NAME" "$SYSTEM"`"
+    
     ((COUNT++))
 done
 
+# If we have a best match, color it
+if [ "$PREFERRED_CHOICE" != "" ]; then
+    MATCHLIST[$((PREFERRED_CHOICE - 1))]="${BOLDGREEN}${MATCHLIST[$((PREFERRED_CHOICE - 1))]}${TEXTRESET}"
+fi
+
+# Display the list
+for MATCH in "${MATCHLIST[@]}"; do
+    echo -e $MATCH
+done
+
 echo ""
-echo -n "Pick a match: "
+echo -n "Pick match${PREFERRED_STRING}: "
 read CHOICE
 echo ""
 
+# Pick best match if none given
+if [ "$CHOICE" == "" -a "$PREFERRED_CHOICE" != "" ]; then
+    CHOICE="$PREFERRED_CHOICE"
+fi
 
 # Get graphics for selected result
 if [ "$CHOICE" -ge 1 -a "$CHOICE" -lt "$COUNT" ]; then
