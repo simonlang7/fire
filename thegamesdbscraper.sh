@@ -1,5 +1,13 @@
 #!/bin/bash
 
+TEXTRESET='\e[0m'
+BOLDGREEN='\e[1;32m'
+BOLDRED='\e[1;31m'
+BOLDYELLOW='\e[1;33m'
+BOLDBLUE='\e[1;34m'
+BOLDPURPLE='\e[1;35m'
+BOLDCYAN='\e[1;36m'
+
 APP_NAME="$0"
 
 printUsage() {
@@ -66,25 +74,26 @@ DESTINATION="."
 
 # Parse arguments
 parseArgs "$@"
-if [ "${BASENAME}" != "" ]; then
-    BASENAME="${BASENAME}-"
-fi
-
-# add the _ so we don't get transferred to the result page immediately
-GAME_URLSEARCH="`echo $GAME | sed -e 's/ /+/g' -e 's/(.*)//g' -e 's/\[.*\]//g' | sed "s/'//g"`+_"
-IMAGE_FILENAMEBASE="${BASENAME}`echo $GAME | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
-
 if [ "$GAME" == "" ]; then
     printUsage
     echo "Error: Game must be specified."
     exit 1
 fi
 
+echo -e "\n\n${BOLDCYAN}Processing $GAME ($BASENAME)${TEXTRESET}\n"
+
+if [ "${BASENAME}" != "" ]; then
+    BASENAME="${BASENAME}-"
+fi
+
+# add the _ so we don't get transferred to the result page immediately
+GAME_URLSEARCH="`echo $GAME | sed -e 's/ /+/g' -e 's/(.*)//g' -e 's/\[.*\]//g' -e "s/'//g" -e 's/&/%26/g'`+_"
+IMAGE_FILENAMEBASE="${BASENAME}`echo $GAME | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
+
 # Search TheGamesDB
 TEMP_SEARCH="$DESTINATION/temp_search.html"
 TEMP_GAME="$DESTINATION/temp_game.html"
 wget -q http://thegamesdb.net/search/?string=$GAME_URLSEARCH -O ${TEMP_SEARCH}
-
 
 # Check results
 GAMEURLS="`grep "http://thegamesdb.net/game/" ${TEMP_SEARCH} | sed 's/^.*a href="//g' | sed 's/".*//g'`"
