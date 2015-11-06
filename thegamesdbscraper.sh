@@ -157,6 +157,7 @@ searchGame() {
     PREFERRED_CHOICE=""
     PREFERRED_STRING=""
     BEST_STRLENDIST="100"
+    SAME_PLATFORM=""
 
     for GAMEURL in $GAMEURLS; do
         # Get name, ID and system/platform of the current match
@@ -180,6 +181,7 @@ searchGame() {
         
         # We only consider it a good match if the platform is the same
         if [ "$MATCHED_PLATFORM" == "$SYSTEM" ]; then
+            SAME_PLATFORM="$COUNT $SAME_PLATFORM"
             # If we don't have any good match yet, this'll be it.
             # Otherwise, it's only better if the full name is contained (see above) AND the string length distance is better
             if [ "$PREFERRED_CHOICE" == "" -o "$NAME_CONTAINED" == "true" -a "$STRLENDIST" -lt "$BEST_STRLENDIST" ]; then
@@ -190,7 +192,7 @@ searchGame() {
         fi
         
         # Save result to MATCHLIST array
-        MATCHLIST[$(($COUNT-1))]="`printf "(%2d) %s (%s)\n" "$COUNT" "$NAME" "$SYSTEM"`"
+        MATCHLIST[$((COUNT - 1))]="`printf "${COLORTAG}(%2d) %s (%s)\n" "$COUNT" "$NAME" "$SYSTEM"`"
         
         ((COUNT++))
     done
@@ -199,6 +201,10 @@ searchGame() {
     if [ "$PREFERRED_CHOICE" != "" ]; then
         MATCHLIST[$((PREFERRED_CHOICE - 1))]="${BOLDGREEN}${MATCHLIST[$((PREFERRED_CHOICE - 1))]}${TEXTRESET}"
     fi
+    # Also color other results with the same platform
+    for MATCH in $SAME_PLATFORM; do
+        MATCHLIST[$((MATCH - 1))]="${BOLDBLUE}${MATCHLIST[$((MATCH - 1))]}${TEXTRESET}"
+    done
 
     # Display the list
     for MATCH in "${MATCHLIST[@]}"; do
