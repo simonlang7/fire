@@ -139,6 +139,19 @@ stringLengthDistance() {
     STRLENDIST="`echo $((${#STR1} - ${#STR2})) | tr -d '-'`"
 }
 
+nameContained() {
+    # Replace roman with arabic numbers for comparison (till 15 should be enough for now...)
+    STR1="`echo $1 | sed -e 's/II/2/g' -e 's/III/3/g' -e 's/IV/4/g' -e 's/V$/5/' -e 's/ V / 5 /g' -e 's/VI/6/g' -e 's/VII/7/g' -e 's/VIII/8/g' -e 's/IX/9/g' -e 's/ X$/ 10/' -e 's/ X / 10 /g' -e 's/XI/11/g' -e 's/XII/12/g' -e 's/XIII/13/g' -e 's/XIV/14/g' -e 's/XV/15/g'`"
+    STR2="`echo $2 | sed -e 's/II/2/g' -e 's/III/3/g' -e 's/IV/4/g' -e 's/V$/5/' -e 's/ V / 5 /g' -e 's/VI/6/g' -e 's/VII/7/g' -e 's/VIII/8/g' -e 's/IX/9/g' -e 's/ X$/ 10/' -e 's/ X / 10 /g' -e 's/XI/11/g' -e 's/XII/12/g' -e 's/XIII/13/g' -e 's/XIV/14/g' -e 's/XV/15/g'`"
+    
+    shopt -s nocasematch
+    if [[ "$STR1" == "$STR2"* || "$STR2" == "$STR1"* ]]; then
+        NAME_CONTAINED="true"
+    else
+        NAME_CONTAINED="false"
+    fi
+}
+
 searchGame() {
     GAME_INPUT="$1"
     # add the _ so we don't get transferred to the result page immediately
@@ -169,12 +182,7 @@ searchGame() {
         # Now find out whether this is the best match we can find
         
         # Is the full name of the rom contained in the match, or vice versa?
-        shopt -s nocasematch
-        if [[ "$NAME" == "${GAME_WITHOUT_DR}"* || "${GAME_WITHOUT_DR}" == "$NAME"* ]]; then
-            NAME_CONTAINED="true"
-        else
-            NAME_CONTAINED="false"
-        fi
+        nameContained "$GAME" "$NAME_WITHOUT_DR"
         
         # Also check how long both strings are (and subtract the results - best if 0)
         stringLengthDistance "$NAME" "${GAME_WITHOUT_DR}"
