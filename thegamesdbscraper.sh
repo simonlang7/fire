@@ -163,7 +163,7 @@ searchGame() {
         # Get name, ID and system/platform of the current match
         NAME="`grep "$GAMEURL" ${TEMP_SEARCH} | grep "h3 style" | perl -pe 's/<.*?>//g'`"
         ID="`echo $GAMEURL | sed 's@http://thegamesdb.net/game/\(.*\)/@\1@'`"
-        SYSTEM="`sed -n '/h3 style.*'$ID'/,/consoles/p' ${TEMP_SEARCH} | tail -1 | sed 's/.*href=.*">\(.*\)<\/a>.*/\1/'`"
+        SYSTEM="`sed -n '/h3 style.*'$ID'/,/common\/consoles/p' ${TEMP_SEARCH} | tail -1 | sed 's/.*href=.*">\(.*\)<\/a>.*/\1/'`"
         
         
         # Now find out whether this is the best match we can find
