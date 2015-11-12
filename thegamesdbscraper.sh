@@ -157,7 +157,7 @@ searchGame() {
     # add the _ so we don't get transferred to the result page immediately
     GAME_URLSEARCH="`echo $GAME_INPUT | sed -e 's/ /+/g' -e 's/(.*)//g' -e 's/\[.*\]//g' -e "s/'//g" -e 's/&/%26/g'`+_"
     GAME_WITHOUT_DR="`echo $GAME | sed -e 's/(.*)//g' -e 's/\[.*\]//g'`"
-    IMAGE_FILENAMEBASE="${BASENAME}`echo $GAME | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
+    IMAGE_FILENAMEBASE="${BASENAME}`echo $GAME | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g'`"
 
     # Search TheGamesDB
     TEMP_SEARCH="$DESTINATION/temp_search.html"

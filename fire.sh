@@ -165,7 +165,7 @@ processRom() {
     getCore $PLATFORM
 
     # Strip spaces and parentheses
-    OUTPUT_BASE="${PLATFORM}-$(echo $ROMPATH | sed 's@.*/@@' | sed -e 's/....$//' -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g')"
+    OUTPUT_BASE="${PLATFORM}-$(echo $ROMPATH | sed 's@.*/@@' | sed -e 's/....$//' -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g')"
     OUTPUT_SH="${OUTPUT_BASE}.sh"
 
     # TODO: check if file exists
