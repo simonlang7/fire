@@ -75,7 +75,7 @@ matchPlatform() {
         PLATFORM="$BASENAME"
     fi
     
-    echo -e "Match platform: $PLATFORM\n\n"
+#    echo -e "Match platform: $PLATFORM\n\n"
     
     case $PLATFORM in
         nes|NES)
@@ -132,24 +132,75 @@ matchPlatform() {
     esac
 }
 
+romanToLatin() {
+    LATIN_STR="`echo $1 | sed -e 's/II/2/g' -e 's/III/3/g' -e 's/IV/4/g' -e 's/V$/5/' -e 's/ V / 5 /g' -e 's/ V:/ 5:/g' -e 's/VI/6/g' -e 's/VII/7/g' -e 's/VIII/8/g' -e 's/IX/9/g' -e 's/ X$/ 10/' -e 's/ X / 10 /g' -e 's/ X:/ 10:/g' -e 's/XI/11/g' -e 's/XII/12/g' -e 's/XIII/13/g' -e 's/XIV/14/g' -e 's/XV/15/g'`"
+}
+
 stringLengthDistance() {
     STR1="$1"
     STR2="$2"
     
     STRLENDIST="`echo $((${#STR1} - ${#STR2})) | tr -d '-'`"
+    ((STR_LD_RATING = 9 - STRLENDIST/10))
 }
 
 nameContained() {
     # Replace roman with arabic numbers for comparison (till 15 should be enough for now...)
-    STR1="`echo $1 | sed -e 's/II/2/g' -e 's/III/3/g' -e 's/IV/4/g' -e 's/V$/5/' -e 's/ V / 5 /g' -e 's/VI/6/g' -e 's/VII/7/g' -e 's/VIII/8/g' -e 's/IX/9/g' -e 's/ X$/ 10/' -e 's/ X / 10 /g' -e 's/XI/11/g' -e 's/XII/12/g' -e 's/XIII/13/g' -e 's/XIV/14/g' -e 's/XV/15/g'`"
-    STR2="`echo $2 | sed -e 's/II/2/g' -e 's/III/3/g' -e 's/IV/4/g' -e 's/V$/5/' -e 's/ V / 5 /g' -e 's/VI/6/g' -e 's/VII/7/g' -e 's/VIII/8/g' -e 's/IX/9/g' -e 's/ X$/ 10/' -e 's/ X / 10 /g' -e 's/XI/11/g' -e 's/XII/12/g' -e 's/XIII/13/g' -e 's/XIV/14/g' -e 's/XV/15/g'`"
+    romanToLatin "$1"
+    STR1="$LATIN_STR"
+    romanToLatin "$2"
+    STR2="$LATIN_STR"
     
     shopt -s nocasematch
     if [[ "$STR1" == "$STR2"* || "$STR2" == "$STR1"* ]]; then
         NAME_CONTAINED="true"
+        NAME_CONTAINED_RATING="9"
     else
         NAME_CONTAINED="false"
+        NAME_CONTAINED_RATING="0"
     fi
+}
+
+# Checks whether all the numbers in $2 are contained in $1
+numberContained() {
+    romanToLatin "$2"
+    NUMBERS="`echo "$LATIN_STR" | grep -o -E '[0-9]+'`"
+    romanToLatin "$1"
+    STR1="$LATIN_STR"
+    
+    NUMBER_CONTAINED="true"
+    NUM_NUMBERS_NOT_CONTAINED=0
+    
+    for NUM in $NUMBERS; do
+        if [[ "$STR1" != *"$NUM"* ]]; then
+            NUMBER_CONTAINED="false"
+            ((NUM_NUMBERS_NOT_CONTAINED++))
+        fi
+    done
+    
+    NUMBERS_COUNT="`echo $NUMBERS | wc -w`"
+    ((NUMBER_CONTAINED_RATING = 9 - 9*${NUM_NUMBERS_NOT_CONTAINED}/${NUMBERS_COUNT}))
+}
+
+# Checks whether all words in $2 are contained in $1
+wordsContained() {
+    romanToLatin "$2"
+    WORDS="`echo $LATIN_STR | grep -o -E '[A-Za-z]*'`"
+    romanToLatin "$1"
+    STR1="$LATIN_STR"
+    
+    WORDS_CONTAINED="true"
+    NUM_WORDS_NOT_CONTAINED=0
+    
+    for WORD in $WORDS; do
+        if [[ "$STR1" != *"$WORD"* ]]; then
+            WORDS_CONTAINED="false"
+            ((NUM_WORDS_NOT_CONTAINED++))
+        fi
+    done
+    
+    WORDS_COUNT="`echo $WORDS | wc -w`"
+    ((WORDS_CONTAINED_RATING = 9 - 9*${NUM_WORDS_NOT_CONTAINED}/${WORDS_COUNT}))
 }
 
 searchGame() {
@@ -182,7 +233,7 @@ searchGame() {
         # Now find out whether this is the best match we can find
         
         # Is the full name of the rom contained in the match, or vice versa?
-        nameContained "$GAME" "$NAME_WITHOUT_DR"
+        nameContained "$NAME" "$GAME_WITHOUT_DR"
         
         # Also check how long both strings are (and subtract the results - best if 0)
         stringLengthDistance "$NAME" "${GAME_WITHOUT_DR}"
@@ -200,7 +251,7 @@ searchGame() {
         fi
         
         # Save result to MATCHLIST array
-        MATCHLIST[$((COUNT - 1))]="`printf "${COLORTAG}(%2d) %s (%s)\n" "$COUNT" "$NAME" "$SYSTEM"`"
+        MATCHLIST[$((COUNT - 1))]="`printf "${COLORTAG}(%2d) %s (%s) (name contained: $NAME_CONTAINED) (strlendist: $STRLENDIST)\n" "$COUNT" "$NAME" "$SYSTEM"`"
         
         ((COUNT++))
     done
@@ -226,10 +277,10 @@ searchGame() {
 }
 
 processGame() {
-    echo -e "\n\n${BOLDCYAN}Processing $GAME ($BASENAME)${TEXTRESET}\n"
-
     # In order to get a default choice...
     matchPlatform
+    
+    echo -e "\n\n${BOLDCYAN}Processing $GAME ($PLATFORM)${TEXTRESET}\n"
 
     if [ "${BASENAME}" != "" ]; then
         BASENAME="${BASENAME}-"

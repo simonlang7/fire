@@ -1,0 +1,9 @@
+Same Platform: mandatory
+
+String contained (either way):             +90000 (+0)
+Number contained (request in result):       +9000 (+0)
+Words contained (request in result):         +900 (+0)
+Words contained (result in request):          +90 (+0)
+String length distance:                        +9 (+0)
+
+
