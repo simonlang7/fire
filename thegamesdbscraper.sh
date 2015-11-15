@@ -132,6 +132,7 @@ matchPlatform() {
     esac
 }
 
+# Replace roman with arabic numbers for comparison (till 15 should be enough for now...)
 romanToLatin() {
     LATIN_STR="`echo $1 | sed -e 's/II/2/g' -e 's/III/3/g' -e 's/IV/4/g' -e 's/V$/5/' -e 's/ V / 5 /g' -e 's/ V:/ 5:/g' -e 's/VI/6/g' -e 's/VII/7/g' -e 's/VIII/8/g' -e 's/IX/9/g' -e 's/ X$/ 10/' -e 's/ X / 10 /g' -e 's/ X:/ 10:/g' -e 's/XI/11/g' -e 's/XII/12/g' -e 's/XIII/13/g' -e 's/XIV/14/g' -e 's/XV/15/g'`"
 }
@@ -144,8 +145,7 @@ stringLengthDistance() {
     ((STR_LD_RATING = 9 - STRLENDIST/10))
 }
 
-nameContained() {
-    # Replace roman with arabic numbers for comparison (till 15 should be enough for now...)
+stringContained() {
     romanToLatin "$1"
     STR1="$LATIN_STR"
     romanToLatin "$2"
@@ -153,11 +153,11 @@ nameContained() {
     
     shopt -s nocasematch
     if [[ "$STR1" == "$STR2"* || "$STR2" == "$STR1"* ]]; then
-        NAME_CONTAINED="true"
-        NAME_CONTAINED_RATING="9"
+        STRING_CONTAINED="true"
+        STRING_CONTAINED_RATING="9"
     else
-        NAME_CONTAINED="false"
-        NAME_CONTAINED_RATING="0"
+        STRING_CONTAINED="false"
+        STRING_CONTAINED_RATING="0"
     fi
 }
 
@@ -168,18 +168,29 @@ numberContained() {
     romanToLatin "$1"
     STR1="$LATIN_STR"
     
+    #echo "$2 (numbers: $NUMBERS) in $1"
+    
     NUMBER_CONTAINED="true"
     NUM_NUMBERS_NOT_CONTAINED=0
     
     for NUM in $NUMBERS; do
         if [[ "$STR1" != *"$NUM"* ]]; then
+            #echo number not contained
             NUMBER_CONTAINED="false"
             ((NUM_NUMBERS_NOT_CONTAINED++))
         fi
     done
     
     NUMBERS_COUNT="`echo $NUMBERS | wc -w`"
-    ((NUMBER_CONTAINED_RATING = 9 - 9*${NUM_NUMBERS_NOT_CONTAINED}/${NUMBERS_COUNT}))
+    #echo number count: $NUMBERS_COUNT
+    if [[ $NUMBERS_COUNT == 0 ]]; then
+        #echo rating: 9
+        NUMBER_CONTAINED_RATING=9
+    else
+        #echo "rating: 9 - 9 * $NUM_NUMBERS_NOT_CONTAINED / $NUMBERS_COUNT"
+        ((NUMBER_CONTAINED_RATING = 9 - 9*${NUM_NUMBERS_NOT_CONTAINED}/${NUMBERS_COUNT}))
+        #echo "rating: $NUMBER_CONTAINED_RATING"
+    fi
 }
 
 # Checks whether all words in $2 are contained in $1
@@ -220,7 +231,7 @@ searchGame() {
     COUNT=1
     PREFERRED_CHOICE=""
     PREFERRED_STRING=""
-    BEST_STRLENDIST="100"
+    BEST_RATING="0"
     SAME_PLATFORM=""
 
     for GAMEURL in $GAMEURLS; do
@@ -232,26 +243,36 @@ searchGame() {
         
         # Now find out whether this is the best match we can find
         
-        # Is the full name of the rom contained in the match, or vice versa?
-        nameContained "$NAME" "$GAME_WITHOUT_DR"
+        numberContained "$NAME" "${GAME_WITHOUT_DR}"
+        ((RATING = NUMBER_CONTAINED_RATING * 10000))
+        
+        stringContained "$NAME" "$GAME_WITHOUT_DR"
+        ((RATING += STRING_CONTAINED_RATING * 1000))
+        
+        wordsContained "$NAME" "${GAME_WITHOUT_DR}"
+        ((RATING += WORDS_CONTAINED_RATING * 100))
+        
+        wordsContained "${GAME_WITHOUT_DR}" "$NAME"
+        ((RATING += WORDS_CONTAINED_RATING * 10))
         
         # Also check how long both strings are (and subtract the results - best if 0)
         stringLengthDistance "$NAME" "${GAME_WITHOUT_DR}"
+        ((RATING += STR_LD_RATING * 1))
         
         # We only consider it a good match if the platform is the same
         if [ "$MATCHED_PLATFORM" == "$SYSTEM" ]; then
             SAME_PLATFORM="$COUNT $SAME_PLATFORM"
             # If we don't have any good match yet, this'll be it.
             # Otherwise, it's only better if the full name is contained (see above) AND the string length distance is better
-            if [ "$PREFERRED_CHOICE" == "" -o "$NAME_CONTAINED" == "true" -a "$STRLENDIST" -lt "$BEST_STRLENDIST" ]; then
+            if [ "$PREFERRED_CHOICE" == "" -o "$RATING" -gt "$BEST_RATING" ]; then
                 PREFERRED_CHOICE=$COUNT
                 PREFERRED_STRING=" ($COUNT)"
-                BEST_STRLENDIST="$STRLENDIST"
+                BEST_RATING="$RATING"
             fi
         fi
         
         # Save result to MATCHLIST array
-        MATCHLIST[$((COUNT - 1))]="`printf "${COLORTAG}(%2d) %s (%s) (name contained: $NAME_CONTAINED) (strlendist: $STRLENDIST)\n" "$COUNT" "$NAME" "$SYSTEM"`"
+        MATCHLIST[$((COUNT - 1))]="`printf "${COLORTAG}(%2d) %s (%s) (rating: $RATING)\n" "$COUNT" "$NAME" "$SYSTEM"`"
         
         ((COUNT++))
     done
