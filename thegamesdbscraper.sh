@@ -168,28 +168,21 @@ numberContained() {
     romanToLatin "$1"
     STR1="$LATIN_STR"
     
-    #echo "$2 (numbers: $NUMBERS) in $1"
-    
     NUMBER_CONTAINED="true"
     NUM_NUMBERS_NOT_CONTAINED=0
     
     for NUM in $NUMBERS; do
         if [[ "$STR1" != *"$NUM"* ]]; then
-            #echo number not contained
             NUMBER_CONTAINED="false"
             ((NUM_NUMBERS_NOT_CONTAINED++))
         fi
     done
     
     NUMBERS_COUNT="`echo $NUMBERS | wc -w`"
-    #echo number count: $NUMBERS_COUNT
     if [[ $NUMBERS_COUNT == 0 ]]; then
-        #echo rating: 9
         NUMBER_CONTAINED_RATING=9
     else
-        #echo "rating: 9 - 9 * $NUM_NUMBERS_NOT_CONTAINED / $NUMBERS_COUNT"
         ((NUMBER_CONTAINED_RATING = 9 - 9*${NUM_NUMBERS_NOT_CONTAINED}/${NUMBERS_COUNT}))
-        #echo "rating: $NUMBER_CONTAINED_RATING"
     fi
 }
 
@@ -241,9 +234,22 @@ searchGame() {
         ID="`echo $GAMEURL | sed 's@http://thegamesdb.net/game/\(.*\)/@\1@'`"
         SYSTEM="`sed -n '/h3 style.*'$ID'/,/common\/consoles/p' ${TEMP_SEARCH} | tail -1 | sed 's/.*href=.*">\(.*\)<\/a>.*/\1/'`"
         
+        # Check which images are available and prepare strings for the result
+        BOXART_STRING="`sed -n '/h3 style.*'$ID'/,/Boxart:/p' ${TEMP_SEARCH} | tail -1 | awk -F"|" '{print $1}' | grep -E "alt=.Yes."`"
+        CLEARLOGO_STRING="`sed -n '/h3 style.*'$ID'/,/Boxart:/p' ${TEMP_SEARCH} | tail -1 | awk -F"|" '{print $3}' | grep -E "alt=.Yes."`"
+        
+        if [ "$BOXART_STRING" != "" ]; then
+            BOXART_STRING="(Box"
+        else
+            BOXART_STRING="("
+        fi
+        if [ "$CLEARLOGO_STRING" != "" ]; then
+            CLEARLOGO_STRING=", Logo)"
+        else
+            CLEARLOGO_STRING=")"
+        fi
         
         # Now find out whether this is the best match we can find
-        
         numberContained "$NAME" "${GAME_WITHOUT_DR}"
         ((RATING = NUMBER_CONTAINED_RATING * 100000))
 
@@ -276,7 +282,7 @@ searchGame() {
         fi
         
         # Save result to MATCHLIST array
-        MATCHLIST[$((COUNT - 1))]="`printf "(%2d) %s (%s) (rating: $RATING)\n" "$COUNT" "$NAME" "$SYSTEM"`"
+        MATCHLIST[$((COUNT - 1))]="`printf "(%2d) %s (%s) %s%s\n" "$COUNT" "$NAME" "$SYSTEM" "$BOXART_STRING" "$CLEARLOGO_STRING"`"
         
         ((COUNT++))
     done
@@ -345,11 +351,7 @@ processGame() {
             wget -q $BOXFRONT_URL -O "$DESTINATION/${IMAGE_FILENAMEBASE}_boxfront.jpg"
             echo " done."
         fi
-        
-
     fi
-
-
 
     rm -f ${TEMP_SEARCH}
     rm -f ${TEMP_GAME}
