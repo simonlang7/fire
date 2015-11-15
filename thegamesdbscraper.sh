@@ -218,7 +218,7 @@ searchGame() {
     GAME_INPUT="$1"
     # add the _ so we don't get transferred to the result page immediately
     GAME_URLSEARCH="`echo $GAME_INPUT | sed -e 's/ /+/g' -e 's/(.*)//g' -e 's/\[.*\]//g' -e "s/'//g" -e 's/&/%26/g'`+_"
-    GAME_WITHOUT_DR="`echo $GAME | sed -e 's/(.*)//g' -e 's/\[.*\]//g'`"
+    GAME_WITHOUT_DR="`echo $GAME_INPUT | sed -e 's/(.*)//g' -e 's/\[.*\]//g'`"
     IMAGE_FILENAMEBASE="${BASENAME}`echo $GAME | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g'`"
 
     # Search TheGamesDB
@@ -233,6 +233,7 @@ searchGame() {
     PREFERRED_STRING=""
     BEST_RATING="0"
     SAME_PLATFORM=""
+    MATCHLIST=""
 
     for GAMEURL in $GAMEURLS; do
         # Get name, ID and system/platform of the current match
@@ -275,7 +276,7 @@ searchGame() {
         fi
         
         # Save result to MATCHLIST array
-        MATCHLIST[$((COUNT - 1))]="`printf "${COLORTAG}(%2d) %s (%s) (rating: $RATING)\n" "$COUNT" "$NAME" "$SYSTEM"`"
+        MATCHLIST[$((COUNT - 1))]="`printf "(%2d) %s (%s) (rating: $RATING)\n" "$COUNT" "$NAME" "$SYSTEM"`"
         
         ((COUNT++))
     done
