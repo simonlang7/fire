@@ -244,7 +244,10 @@ searchGame() {
         # Now find out whether this is the best match we can find
         
         numberContained "$NAME" "${GAME_WITHOUT_DR}"
-        ((RATING = NUMBER_CONTAINED_RATING * 10000))
+        ((RATING = NUMBER_CONTAINED_RATING * 100000))
+
+        numberContained "${GAME_WITHOUT_DR}" "$NAME"
+        ((RATING += NUMBER_CONTAINED_RATING * 10000))
         
         stringContained "$NAME" "$GAME_WITHOUT_DR"
         ((RATING += STRING_CONTAINED_RATING * 1000))
