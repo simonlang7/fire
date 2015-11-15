@@ -209,6 +209,10 @@ wordsContained() {
 
 searchGame() {
     GAME_INPUT="$1"
+    NUM_RESULTS="$2"
+    if [ "$NUM_RESULTS" == "" ]; then
+        NUM_RESULTS=20
+    fi
     # add the _ so we don't get transferred to the result page immediately
     GAME_URLSEARCH="`echo $GAME_INPUT | sed -e 's/ /+/g' -e 's/(.*)//g' -e 's/\[.*\]//g' -e "s/'//g" -e 's/&/%26/g'`+_"
     GAME_WITHOUT_DR="`echo $GAME_INPUT | sed -e 's/(.*)//g' -e 's/\[.*\]//g'`"
@@ -217,7 +221,7 @@ searchGame() {
     # Search TheGamesDB
     TEMP_SEARCH="$DESTINATION/temp_search.html"
     TEMP_GAME="$DESTINATION/temp_game.html"
-    wget -q http://thegamesdb.net/search/?string=$GAME_URLSEARCH -O ${TEMP_SEARCH}
+    wget -q "http://thegamesdb.net/search/?searchview=listing&page=1&limit=${NUM_RESULTS}&string=$GAME_URLSEARCH" -O ${TEMP_SEARCH}
 
     # Check results
     GAMEURLS="`grep "http://thegamesdb.net/game/" ${TEMP_SEARCH} | grep "h3 style" | sed 's/^.*a href="//g' | sed 's/".*//g'`"
@@ -226,17 +230,17 @@ searchGame() {
     PREFERRED_STRING=""
     BEST_RATING="0"
     SAME_PLATFORM=""
-    MATCHLIST=""
+    MATCHLIST=()
 
     for GAMEURL in $GAMEURLS; do
         # Get name, ID and system/platform of the current match
         NAME="`grep "$GAMEURL" ${TEMP_SEARCH} | grep "h3 style" | perl -pe 's/<.*?>//g'`"
         ID="`echo $GAMEURL | sed 's@http://thegamesdb.net/game/\(.*\)/@\1@'`"
-        SYSTEM="`sed -n '/h3 style.*'$ID'/,/common\/consoles/p' ${TEMP_SEARCH} | tail -1 | sed 's/.*href=.*">\(.*\)<\/a>.*/\1/'`"
+        SYSTEM="`sed -n '/h3 style.*\/'$ID'\//,/common\/consoles/p' ${TEMP_SEARCH} | tail -1 | sed 's/.*href=.*">\(.*\)<\/a>.*/\1/'`"
         
         # Check which images are available and prepare strings for the result
-        BOXART_STRING="`sed -n '/h3 style.*'$ID'/,/Boxart:/p' ${TEMP_SEARCH} | tail -1 | awk -F"|" '{print $1}' | grep -E "alt=.Yes."`"
-        CLEARLOGO_STRING="`sed -n '/h3 style.*'$ID'/,/Boxart:/p' ${TEMP_SEARCH} | tail -1 | awk -F"|" '{print $3}' | grep -E "alt=.Yes."`"
+        BOXART_STRING="`sed -n '/h3 style.*\/'$ID'\//,/Boxart:/p' ${TEMP_SEARCH} | tail -1 | awk -F"|" '{print $1}' | grep -E "alt=.Yes."`"
+        CLEARLOGO_STRING="`sed -n '/h3 style.*\/'$ID'\//,/Boxart:/p' ${TEMP_SEARCH} | tail -1 | awk -F"|" '{print $3}' | grep -E "alt=.Yes."`"
         
         if [ "$BOXART_STRING" != "" ]; then
             BOXART_STRING="(Box"
@@ -302,7 +306,7 @@ searchGame() {
     done
 
     echo ""
-    echo -n "Pick match${PREFERRED_STRING} or enter new search ('-' to skip game): "
+    echo -n "Pick match${PREFERRED_STRING} or enter new search ('-' to skip game, '@<num>' for <num> results): "
     read CHOICE
     echo ""
 }
@@ -318,10 +322,16 @@ processGame() {
     fi
 
     GAME_SEARCH="$GAME"
-    searchGame "$GAME_SEARCH"
+    NUM_RESULTS=20
+    searchGame "$GAME_SEARCH" "$NUM_RESULTS"
     
     until [[ $CHOICE =~ ^[0-9]+$ || $CHOICE == "" || $CHOICE == "-" ]]; do
-        searchGame "$CHOICE"
+        if [[ $CHOICE =~ ^@[0-9]+$ ]]; then
+            NUM_RESULTS="${CHOICE:1}"
+        else
+            GAME_SEARCH="$CHOICE"
+        fi
+        searchGame "$GAME_SEARCH" "$NUM_RESULTS"
     done
 
     # Pick best match if none given
