@@ -231,6 +231,14 @@ searchGame() {
     BEST_RATING="0"
     SAME_PLATFORM=""
     MATCHLIST=()
+    
+    if [[ $GAMEURLS = "" ]]; then
+        GAMEURLS="`grep "http://thegamesdb.net/game/" ${TEMP_SEARCH} | grep "canonical" | sed -e 's/^.*href=.//g' -e 's/\".*//g'`"
+        echo -n "Found one result: "
+        grep "<h1 style" ${TEMP_SEARCH} | perl -pe 's/<.*?>//g'
+        CHOICE=1
+        return
+    fi
 
     for GAMEURL in $GAMEURLS; do
         # Get name, ID and system/platform of the current match
@@ -344,7 +352,7 @@ processGame() {
     fi
 
     # Get graphics for selected result
-    if [ "$CHOICE" -ge 1 -a "$CHOICE" -lt "$COUNT" ]; then
+    if [ "$CHOICE" -ge 1 -a "$CHOICE" -le "$COUNT" ]; then
         GAMEURL="`echo $GAMEURLS | awk -F" " '{print $'$CHOICE'}'`"
         wget -q $GAMEURL -O ${TEMP_GAME}
         
