@@ -4,7 +4,7 @@
 # License: GPLv2
 RETROARCH="/usr/bin/retroarch"
 LIBRETRO_CONFIG="/home/simon/.config/retroarch/retroarch.cfg"
-LIBRETRO_LIBRETRO_COREDIR="/home/simon/.config/retroarch/cores"
+LIBRETRO_COREDIR="/home/simon/.config/retroarch/cores"
 LIBRETRO_ENDING="_libretro.so"
 
 M64DIR="/home/simon/mupen64plus/"
