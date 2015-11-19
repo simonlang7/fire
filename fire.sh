@@ -60,53 +60,6 @@ parseArgs() {
     fi
 }
 
-getCore() {
-    SYSTEM="$1"
-    case $SYSTEM in
-        nes)
-            CORE="fceumm"
-            ;;
-            
-        snes)
-            CORE="snes9x_next"
-            ;;
-        
-        n64)
-            CORE="mupen64plus"
-            ;;
-            
-        psx)
-            CORE="mednafen_psx"
-            ;;
-            
-        md|megadrive|genesis)
-            CORE="genesis_plus_ex"
-            ;;
-            
-        sat|saturn)
-            CORE="yabause"
-            ;;
-            
-        gb|gbc)
-            CORE="gambatte"
-            ;;
-            
-        gba)
-            CORE="vbam"
-            ;;
-            
-        nds)
-            CORE="desmume"
-            ;;
-            
-        psp)
-            CORE="ppsspp"
-            ;;
-            
-    esac
-
-}
-
 getPlatform() {
     EXTENSION="$1"
     case $EXTENSION in
@@ -162,14 +115,13 @@ processRom() {
     if [ "$PLATFORM" == "" ]; then
         getPlatform "$EXTENSION"
     fi
-    getCore $PLATFORM
 
     # Strip spaces and parentheses
     OUTPUT_BASE="${PLATFORM}-$(echo $ROMPATH | sed 's@.*/@@' | sed -e 's/....$//' -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g')"
     OUTPUT_SH="${OUTPUT_BASE}.sh"
 
     # TODO: check if file exists
-    sed -e "s@#CORE#@$CORE@" -e "s@#ROM#@$ROMPATH@" "$SH_TEMPLATE" > "$SH_DEST/$OUTPUT_SH"
+    echo -e "#!/bin/bash\n$LAUNCHER $PLATFORM \"$ROMPATH\"" > "$SH_DEST/$OUTPUT_SH"
     chmod +x "$SH_DEST/$OUTPUT_SH"
 
     # Get images
@@ -215,7 +167,7 @@ processRom() {
 
 # Default settings
 SH_DEST="`pwd`"
-SH_TEMPLATE="launchgame.sh"
+LAUNCHER="$HOME/bin/launchgame.sh"
 IMG_DEST="$(pwd)/artwork"
 DESKTOP_DEST="$HOME/.local/share/applications"
 SCRAPER="./thegamesdbscraper.sh"
@@ -224,8 +176,8 @@ SCRAPER="./thegamesdbscraper.sh"
 parseArgs "$@"
 
 # SH template exists?
-if [ ! -e "$SH_TEMPLATE" ]; then
-    echo "Error: could not find $SH_TEMPLATE."
+if [ ! -e "$LAUNCHER" ]; then
+    echo "Error: could not find ${LAUNCHER}."
     exit 1
 fi
 
