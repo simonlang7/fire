@@ -36,7 +36,7 @@ parseArgs() {
                 DESTINATION="$2"
                 shift
                 ;;
-                
+            
             -b|--basename)
                 BASENAME="$2"
                 shift
@@ -232,7 +232,7 @@ searchGame() {
     SAME_PLATFORM=""
     MATCHLIST=()
     
-    if [[ $GAMEURLS = "" ]]; then
+    if [[ $GAMEURLS == "" ]]; then
         GAMEURLS="`grep "http://thegamesdb.net/game/" ${TEMP_SEARCH} | grep "canonical" | sed -e 's/^.*href=.//g' -e 's/\".*//g'`"
         echo -n "Found one result: "
         grep "<h1 style" ${TEMP_SEARCH} | perl -pe 's/<.*?>//g'
