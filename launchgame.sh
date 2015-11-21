@@ -38,7 +38,7 @@ launchGame() {
         
         n64)
             LIBRETRO_CORE="mupen64plus"
-            APPLICATION="mupen64plus"
+            APPLICATION="retroarch"
             ;;
             
         psx)

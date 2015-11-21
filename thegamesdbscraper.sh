@@ -15,11 +15,11 @@ BOLDCYAN='\e[1;36m'
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-g|--game \"<Game>\"] [-d|--destination <Path>] [-b|--basename <Image basename>] [-p|--platform <Platform>] [-h|--help]"
+    echo "Usage: $APP_NAME [-o|--output PATH] [-b|--basename IMAGE_BASENAME] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
 }
 
 parseArgs() {
-    while [[ $# > 1 ]]; do
+    while [[ $# > 0 && $1 == "-"* ]]; do
         PARAM=$1
         case $PARAM in
             -h|--help)
@@ -27,13 +27,8 @@ parseArgs() {
                 exit 0
                 ;;
             
-            -g|--game)
-                GAME="$2"
-                shift
-                ;;
-            
-            -d|--destination)
-                DESTINATION="$2"
+            -o|--output)
+                OUTPUT="$2"
                 shift
                 ;;
             
@@ -54,19 +49,20 @@ parseArgs() {
         shift
     done
     
-    # Last parameter
-    if [[ $# > 0 ]]; then
-        PARAM=$1
-        case $PARAM in
-            -h|--help)
-                printUsage
-                exit 0
-                ;;
-                
-            *)
-                ;;
-        esac
+    # No game specified?
+    if [[ $# == 0 ]]; then
+        printUsage
+        exit 1
     fi
+    
+    # Remaining arguments (must be at least one game)
+    GAMES=()
+    NUM_GAMES=0
+    while [[ $# > 0 ]]; do
+        GAMES[$NUM_GAMES]="$1"
+        ((NUM_GAMES++))
+        shift
+    done
 }
 
 matchPlatform() {
@@ -74,8 +70,6 @@ matchPlatform() {
     if [ "$PLATFORM" == "" ]; then
         PLATFORM="$BASENAME"
     fi
-    
-#    echo -e "Match platform: $PLATFORM\n\n"
     
     case $PLATFORM in
         nes|NES)
@@ -219,8 +213,8 @@ searchGame() {
     IMAGE_FILENAMEBASE="${BASENAME}`echo $GAME | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g'`"
 
     # Search TheGamesDB
-    TEMP_SEARCH="$DESTINATION/temp_search.html"
-    TEMP_GAME="$DESTINATION/temp_game.html"
+    TEMP_SEARCH="$OUTPUT/temp_search.html"
+    TEMP_GAME="$OUTPUT/temp_game.html"
     wget -q "http://thegamesdb.net/search/?searchview=listing&page=1&limit=${NUM_RESULTS}&string=$GAME_URLSEARCH" -O ${TEMP_SEARCH}
 
     # Check results
@@ -321,6 +315,7 @@ searchGame() {
 
 processGame() {
     # In order to get a default choice...
+    GAME="$1"
     matchPlatform
     
     echo -e "\n\n${BOLDCYAN}Processing $GAME ($PLATFORM)${TEXTRESET}\n"
@@ -361,12 +356,12 @@ processGame() {
         
         if [ "$CLEARLOGO_URL" != "" ]; then
             echo -n "Saving clear logo..."
-            wget -q $CLEARLOGO_URL -O "$DESTINATION/${IMAGE_FILENAMEBASE}_clearlogo.png"
+            wget -q $CLEARLOGO_URL -O "$OUTPUT/${IMAGE_FILENAMEBASE}_clearlogo.png"
             echo " done."
         fi
         if [ "$BOXFRONT_URL" != "" ]; then
             echo -n "Saving box front..."
-            wget -q $BOXFRONT_URL -O "$DESTINATION/${IMAGE_FILENAMEBASE}_boxfront.jpg"
+            wget -q $BOXFRONT_URL -O "$OUTPUT/${IMAGE_FILENAMEBASE}_boxfront.jpg"
             echo " done."
         fi
     fi
@@ -377,14 +372,16 @@ processGame() {
 
 # Default settings
 BASENAME=""
-DESTINATION="."
+OUTPUT="."
 
 # Parse arguments
 parseArgs "$@"
-if [ "$GAME" == "" ]; then
-    printUsage
-    echo "Error: Game must be specified."
-    exit 1
-fi
+for GAME in "${GAMES[@]}"; do
+    if [ "$GAME" == "" ]; then
+        printUsage
+        echo "Error: Game must be specified."
+        exit 1
+    fi
 
-processGame
+    processGame "$GAME"
+done

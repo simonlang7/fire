@@ -6,11 +6,11 @@
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-r|--rom \"<Path to ROM>\"] [-s|--shdest <Path>] [-i|--imagedest <Path>] [-p|--platform <Platform>] [-h|--help]"
+    echo "Usage: $APP_NAME [-o|--output PATH] [-O|--image-output PATH] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
 }
 
 parseArgs() {
-    while [[ $# > 1 ]]; do
+    while [[ $# > 0 && $1 == "-"* ]]; do
         PARAM=$1
         case $PARAM in
             -h|--help)
@@ -18,17 +18,12 @@ parseArgs() {
                 exit 0
                 ;;
             
-            -r|--rom)
-                ROMPATH="$2"
-                shift
-                ;;
-            
-            -s|--shdest)
+            -o|--output)
                 SH_DEST="$2"
                 shift
                 ;;
             
-            -i|--imagedest)
+            -O|--image-output)
                 IMG_DEST="$2"
                 shift
                 ;;
@@ -45,19 +40,20 @@ parseArgs() {
         shift
     done
     
-    # Last parameter
-    if [[ $# > 0 ]]; then
-        PARAM=$1
-        case $PARAM in
-            -h|--help)
-                printUsage
-                exit 0
-                ;;
-                
-            *)
-                ;;
-        esac
+    # No game specified?
+    if [[ $# == 0 ]]; then
+        printUsage
+        exit 1
     fi
+    
+    # Remaining arguments (must be at least one game)
+    ROMS=()
+    NUM_ROMS=0
+    while [[ $# > 0 ]]; do
+        ROMS[$NUM_ROMS]="$1"
+        ((NUM_ROMS++))
+        shift
+    done
 }
 
 getPlatform() {
@@ -117,7 +113,7 @@ processRom() {
     fi
 
     # Strip spaces and parentheses
-    OUTPUT_BASE="${PLATFORM}-$(echo $ROMPATH | sed 's@.*/@@' | sed -e 's/....$//' -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g')"
+    OUTPUT_BASE="${PLATFORM}-`echo $ROMPATH | sed 's@.*/@@' | sed -e 's/....$//' -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g' -e "s/'//g" -e 's/\"//g'`"
     OUTPUT_SH="${OUTPUT_BASE}.sh"
 
     # TODO: check if file exists
@@ -125,7 +121,7 @@ processRom() {
     chmod +x "$SH_DEST/$OUTPUT_SH"
 
     # Get images
-    "$SCRAPER" --game "${GAMENAME_WITH_DR}" --destination "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM"
+    "$SCRAPER" --output "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM" "${GAMENAME_WITH_DR}"
 
     IMAGE_PATH_BASE="${IMG_DEST}/${PLATFORM}-`echo "$GAMENAME_WITH_DR" | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
     IMAGE_PATH="${IMAGE_PATH_BASE}_clearlogo.png"
@@ -168,12 +164,12 @@ processRom() {
 # Default settings
 SH_DEST="`pwd`"
 LAUNCHER="$HOME/bin/launchgame.sh"
-IMG_DEST="$(pwd)/artwork"
 DESKTOP_DEST="$HOME/.local/share/applications"
 SCRAPER="./thegamesdbscraper.sh"
 
 # Parse arguments
 parseArgs "$@"
+IMG_DEST="${SH_DEST}/artwork"
 
 # SH template exists?
 if [ ! -e "$LAUNCHER" ]; then
@@ -182,27 +178,22 @@ if [ ! -e "$LAUNCHER" ]; then
 fi
 
 # Create necessary paths
+mkdir -p "$SH_DEST"
 mkdir -p "$DESKTOP_DEST"
 mkdir -p "$IMG_DEST"
 
 # Make sh destination, rom path, and image destination absolute paths
 SH_DEST="`realpath "$SH_DEST"`"
-ROMPATH="`realpath "$ROMPATH"`"
 IMG_DEST="`realpath "$IMG_DEST"`"
 
-# Path given instead of rom? Process all roms it contains
-if [ -d "$ROMPATH" ]; then
-    OLDIFS=$IFS
-    IFS=$'\n'
-    ROMS=($(find "$ROMPATH"/* -type f))
-    IFS=$OLDIFS
-    NUMROMS=${#ROMS[@]}
-    
-    for (( i=0; i<${NUMROMS}; i++ )); do
-        ROM="${ROMS[$i]}"
-        processRom "$ROM"
-    done
-else
-    processRom "$ROMPATH"
-fi
+# Process all ROMs
+for ROM in "${ROMS[@]}"; do
+    ROM="`realpath "$ROM"`"
+    if [ ! -e "$ROM" ]; then
+        echo "Error: $ROM does not exist. Skipping..."
+        printUsage
+        exit 1
+    fi
+    processRom "$ROM"
+done
 
