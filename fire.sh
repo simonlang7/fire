@@ -3,10 +3,18 @@
 # Author: Simon Lang
 # License: GPLv2
 
+TEXTRESET='\e[0m'
+BOLDGREEN='\e[1;32m'
+BOLDRED='\e[1;31m'
+BOLDYELLOW='\e[1;33m'
+BOLDBLUE='\e[1;34m'
+BOLDPURPLE='\e[1;35m'
+BOLDCYAN='\e[1;36m'
+
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-a|--autoselect] [-o|--output PATH] [-O|--image-output PATH] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
+    echo "Usage: $APP_NAME [-h|--help] [-a|--autoselect] [-o|--output PATH] [-O|--image-output PATH] [-p|--platform PLATFORM] [-f|--force] GAME [GAME...]"
 }
 
 parseArgs() {
@@ -16,6 +24,10 @@ parseArgs() {
             -h|--help)
                 printUsage
                 exit 0
+                ;;
+                
+            -a|--autoselect)
+                AUTOSELECT_PARAM="--autoselect"
                 ;;
             
             -o|--output)
@@ -33,8 +45,8 @@ parseArgs() {
                 shift
                 ;;
                 
-            -a|--autoselect)
-                AUTOSELECT_PARAM="--autoselect"
+            -f|--force)
+                FORCE="true"
                 ;;
             
             *)
@@ -120,7 +132,11 @@ processRom() {
     OUTPUT_BASE="${PLATFORM}-`echo $ROMPATH | sed 's@.*/@@' | sed -e 's/....$//' -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g' -e "s/'//g" -e 's/\"//g'`"
     OUTPUT_SH="${OUTPUT_BASE}.sh"
 
-    # TODO: check if file exists
+    if [[ -e "$SH_DEST/$OUTPUT_SH" && $FORCE != "true" ]]; then
+        echo -e "${BOLDPURPLE}Launcher for $GAME exists, skipping.${TEXTRESET}"
+        return
+    fi
+    
     echo -e "#!/bin/bash\n$LAUNCHER $PLATFORM \"$ROMPATH\"" > "$SH_DEST/$OUTPUT_SH"
     chmod +x "$SH_DEST/$OUTPUT_SH"
 

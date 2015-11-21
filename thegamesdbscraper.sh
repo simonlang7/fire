@@ -312,7 +312,7 @@ searchGame() {
     done
     
     if [[ $AUTOSELECT == "true" && $PREFERRED_CHOICE != "" ]]; then
-        echo -e "Selecting ${BOLDGREEN}`echo "${MATCHLIST[$((PREFERRED_CHOICE - 1))]}" | sed 's/( \([0-9]\)/(\1/'`${TEXTRESET}"
+        echo -e "\nSelecting ${BOLDGREEN}`echo "${MATCHLIST[$((PREFERRED_CHOICE - 1))]}" | sed 's/( \([0-9]\)/(\1/'`${TEXTRESET}"
         CHOICE=${PREFERRED_CHOICE}
     else
         echo ""
@@ -328,7 +328,7 @@ processGame() {
     GAME="$1"
     matchPlatform
     
-    echo -e "\n\n${BOLDCYAN}Processing $GAME ($PLATFORM)${TEXTRESET}\n"
+    echo -e "\n${BOLDCYAN}Processing $GAME ($PLATFORM)${TEXTRESET}\n"
 
     if [ "${BASENAME}" != "" ]; then
         BASENAME="${BASENAME}-"
@@ -375,6 +375,8 @@ processGame() {
             echo " done."
         fi
     fi
+    
+    echo ""
 
     rm -f ${TEMP_SEARCH}
     rm -f ${TEMP_GAME}
