@@ -15,7 +15,7 @@ BOLDCYAN='\e[1;36m'
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-o|--output PATH] [-b|--basename IMAGE_BASENAME] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
+    echo "Usage: $APP_NAME [-a|--autoselect] [-o|--output PATH] [-b|--basename IMAGE_BASENAME] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
 }
 
 parseArgs() {
@@ -40,6 +40,10 @@ parseArgs() {
             -p|--platform)
                 PLATFORM="$2"
                 shift
+                ;;
+                
+            -a|--autoselect)
+                AUTOSELECT="true"
                 ;;
             
             *)
@@ -306,11 +310,17 @@ searchGame() {
     for MATCH in "${MATCHLIST[@]}"; do
         echo -e $MATCH
     done
+    
+    if [[ $AUTOSELECT == "true" && $PREFERRED_CHOICE != "" ]]; then
+        echo -e "Selecting ${BOLDGREEN}`echo "${MATCHLIST[$((PREFERRED_CHOICE - 1))]}" | sed 's/( \([0-9]\)/(\1/'`${TEXTRESET}"
+        CHOICE=${PREFERRED_CHOICE}
+    else
+        echo ""
+        echo -n "Pick match${PREFERRED_STRING} or enter new search ('-' to skip game, '@<num>' for <num> results): "
+        read CHOICE
+        echo ""
+    fi
 
-    echo ""
-    echo -n "Pick match${PREFERRED_STRING} or enter new search ('-' to skip game, '@<num>' for <num> results): "
-    read CHOICE
-    echo ""
 }
 
 processGame() {

@@ -6,7 +6,7 @@
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-o|--output PATH] [-O|--image-output PATH] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
+    echo "Usage: $APP_NAME [-a|--autoselect] [-o|--output PATH] [-O|--image-output PATH] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
 }
 
 parseArgs() {
@@ -31,6 +31,10 @@ parseArgs() {
             -p|--platform)
                 PLATFORM="$2"
                 shift
+                ;;
+                
+            -a|--autoselect)
+                AUTOSELECT_PARAM="--autoselect"
                 ;;
             
             *)
@@ -121,7 +125,7 @@ processRom() {
     chmod +x "$SH_DEST/$OUTPUT_SH"
 
     # Get images
-    "$SCRAPER" --output "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM" "${GAMENAME_WITH_DR}"
+    "$SCRAPER" ${AUTOSELECT_PARAM} --output "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM" "${GAMENAME_WITH_DR}"
 
     IMAGE_PATH_BASE="${IMG_DEST}/${PLATFORM}-`echo "$GAMENAME_WITH_DR" | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
     IMAGE_PATH="${IMAGE_PATH_BASE}_clearlogo.png"
