@@ -311,9 +311,14 @@ searchGame() {
         echo -e $MATCH
     done
     
-    if [[ $AUTOSELECT == "true" && $PREFERRED_CHOICE != "" ]]; then
-        echo -e "\nSelecting ${BOLDGREEN}`echo "${MATCHLIST[$((PREFERRED_CHOICE - 1))]}" | sed 's/( \([0-9]\)/(\1/'`${TEXTRESET}"
-        CHOICE=${PREFERRED_CHOICE}
+    if [[ $AUTOSELECT == "true" ]]; then
+        if [[ $PREFERRED_CHOICE != "" ]]; then
+            echo -e "\nSelecting ${BOLDGREEN}`echo "${MATCHLIST[$((PREFERRED_CHOICE - 1))]}" | sed 's/( \([0-9]\)/(\1/'`${TEXTRESET}"
+            CHOICE=${PREFERRED_CHOICE}
+        else
+            echo -e "\nNo match found, skipping.\n"
+            CHOICE="-"
+        fi
     else
         echo ""
         echo -n "Pick match${PREFERRED_STRING} or enter new search ('-' to skip game, '@<num>' for <num> results): "
@@ -385,9 +390,16 @@ processGame() {
 # Default settings
 BASENAME=""
 OUTPUT="."
+LOGFILE="autoselect.log"
 
 # Parse arguments
 parseArgs "$@"
+
+if [[ $AUTOSELECT == "true" ]]; then
+    # TODO: implement
+fi
+
+# Process games
 for GAME in "${GAMES[@]}"; do
     if [ "$GAME" == "" ]; then
         printUsage
