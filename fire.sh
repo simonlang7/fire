@@ -87,7 +87,7 @@ getPlatform() {
             PLATFORM="n64"
             ;;
             
-        iso|cue)
+        iso|cue|m3u)
             PLATFORM="psx"
             ;;
             
