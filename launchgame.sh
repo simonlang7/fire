@@ -2,6 +2,8 @@
 #
 # Author: Simon Lang
 # License: GPLv2
+
+
 RETROARCH="/usr/bin/retroarch"
 LIBRETRO_CONFIG="/home/simon/.config/retroarch/retroarch.cfg"
 LIBRETRO_COREDIR="/home/simon/.config/retroarch/cores"

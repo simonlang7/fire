@@ -227,6 +227,7 @@ searchGame() {
     PREFERRED_CHOICE=""
     PREFERRED_STRING=""
     BEST_RATING="0"
+    BEST_MATCH_NAME=""
     SAME_PLATFORM=""
     MATCHLIST=()
     
@@ -288,6 +289,7 @@ searchGame() {
                 PREFERRED_CHOICE=$COUNT
                 PREFERRED_STRING=" ($COUNT)"
                 BEST_RATING="$RATING"
+                BEST_MATCH_NAME="$NAME ${BOXART_STRING}${CLEARLOGO_STRING}"
             fi
         fi
         
@@ -318,7 +320,13 @@ searchGame() {
         else
             echo -e "\nNo match found, skipping.\n"
             CHOICE="-"
+            BEST_MATCH_NAME="--no match found--"
         fi
+        
+        # Log
+        echo "[ ] $GAME_WITHOUT_DR" >> "$LOGFILE"
+        echo "    $BEST_MATCH_NAME" >> "$LOGFILE"
+        echo "" >> "$LOGFILE"
     else
         echo ""
         echo -n "Pick match${PREFERRED_STRING} or enter new search ('-' to skip game, '@<num>' for <num> results): "
@@ -396,7 +404,10 @@ LOGFILE="autoselect.log"
 parseArgs "$@"
 
 if [[ $AUTOSELECT == "true" ]]; then
-    # TODO: implement
+    if [[ -e "$LOGFILE" ]]; then
+        mv -- "$LOGFILE" "${LOGFILE}.old"
+    fi
+    touch "$LOGFILE"
 fi
 
 # Process games
