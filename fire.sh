@@ -15,7 +15,7 @@ BOLDCYAN='\e[1;36m'
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-h|--help] [-a|--autoselect] [-o|--output PATH] [-O|--image-output PATH] [-p|--platform PLATFORM] [-f|--force] GAME [GAME...]"
+    echo "Usage: $APP_NAME [-h|--help] [-r|--rescan FILE] [-a|--autoselect [--no-rescan]] [-o|--output PATH] [-O|--image-output PATH] [-p|--platform PLATFORM] [-f|--force] GAME [GAME...]"
 }
 
 parseArgs() {
@@ -26,9 +26,18 @@ parseArgs() {
                 printUsage
                 exit 0
                 ;;
+            
+            -r|--rescan)
+                RESCAN_FILE="$2"
+                shift
+                ;;
                 
             -a|--autoselect)
-                AUTOSELECT_PARAM="--autoselect"
+                AUTOSELECT_PARAM="--autoselect --logfile "$LOGFILE""
+                ;;
+            
+            --no-rescan)
+                NO_RESCAN="true"
                 ;;
             
             -o|--output)
@@ -57,8 +66,8 @@ parseArgs() {
         shift
     done
     
-    # No game specified?
-    if [[ $# == 0 ]]; then
+    # No game AND no rescan file specified?
+    if [[ $# == 0 && $RESCAN_FILE == "" ]]; then
         printUsage
         exit 1
     fi
@@ -114,8 +123,8 @@ getPlatform() {
 processRom() {
     # Get game name
     ROMPATH="$1"
-    GAMENAME_WITH_DR="`echo $ROMPATH | sed 's@.*/@@' | sed 's/....$//'`"
-    GAME="`echo $ROMPATH | sed 's@.*/@@' | sed 's/....$//' | sed -e 's/([EGJUSA]*)//' -e 's/\[.*\]//'`"
+    GAMENAME_WITH_DR="`echo "$ROMPATH" | sed 's@.*/@@' | sed 's/\..\{2,5\}$//'`"
+    GAME="`echo "$ROMPATH" | sed 's@.*/@@' | sed 's/\..\{2,5\}$//' | sed -e 's/([EGJUSA]*)//' -e 's/\[.*\]//'`"
     
     if [ "$GAME" == "" ]; then
         echo "Error: no game specified."
@@ -124,13 +133,13 @@ processRom() {
         exit 1
     fi
 
-    EXTENSION="`echo $ROMPATH | sed 's/.*\(...\)$/\1/'`"
+    EXTENSION="`echo $ROMPATH | sed 's/.*\(.\{2,5\}\)$/\1/'`"
     if [ "$PLATFORM" == "" ]; then
         getPlatform "$EXTENSION"
     fi
 
     # Strip spaces and parentheses
-    OUTPUT_BASE="${PLATFORM}-`echo $ROMPATH | sed 's@.*/@@' | sed -e 's/....$//' -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g' -e "s/'//g" -e 's/\"//g'`"
+    OUTPUT_BASE="${PLATFORM}-`echo $ROMPATH | sed 's@.*/@@' | sed -e 's/\..\{2,5\}$//' -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g' -e 's/\.//g' -e "s/'//g" -e 's/\"//g'`"
     OUTPUT_SH="${OUTPUT_BASE}.sh"
 
     if [[ -e "$SH_DEST/$OUTPUT_SH" && $FORCE != "true" ]]; then
@@ -142,7 +151,8 @@ processRom() {
     chmod +x "$SH_DEST/$OUTPUT_SH"
 
     # Get images
-    "$SCRAPER" ${AUTOSELECT_PARAM} --output "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM" "${GAMENAME_WITH_DR}"
+#    echo "Calling: \"$SCRAPER\" ${AUTOSELECT_PARAM} --output \"${IMG_DEST}\" --basename \"$PLATFORM\" --platform \"$PLATFORM\" \"${ROMPATH}\""
+    "$SCRAPER" ${AUTOSELECT_PARAM} --output "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM" "${ROMPATH}"
 
     IMAGE_PATH_BASE="${IMG_DEST}/${PLATFORM}-`echo "$GAMENAME_WITH_DR" | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
     IMAGE_PATH="${IMAGE_PATH_BASE}_clearlogo.png"
@@ -181,12 +191,49 @@ processRom() {
 
 }
 
+processGamesFromFile() {
+    INPUT_FILE="$1"
+    if [[ $VISUAL == "" ]]; then
+        echo -n "Editor to view file: "
+        read VISUAL
+    fi
+    "$VISUAL" "$INPUT_FILE"
+    AUTOSELECT_PARAM=""
+    
+    # Read games from file
+    GAMES=()
+    COUNT=0
+    while read -r GAME; do
+        GAMES[$COUNT]="$GAME"
+        ((COUNT++))
+    done < <(grep -B1 -i -E "^\[x\]" "$INPUT_FILE" | grep "#" | sed 's/# //g')
+
+    # Process read games    
+    for GAME in "${GAMES[@]}"; do
+        # There are two possibilities:
+        # 1. The file's comments contain full paths to the roms, i.e. "# /path/to/rom.ext",
+        #    then we can just process it directly from there
+        if [[ -e "$GAME" ]]; then
+            processRom "$GAME"
+        else
+            # or 2. They just contain the game's name, i.e. "# Some Game", then we have to check
+            # our original rom list for the full path
+            for ROM in "${ROMS[@]}"; do
+                if [[ "$ROM" == *"$GAME"* ]]; then
+                    processRom "$ROM"
+                fi
+            done
+        fi
+    done
+}
+
 
 # Default settings
 SH_DEST="`pwd`"
 LAUNCHER="$HOME/bin/launchgame.sh"
 DESKTOP_DEST="$HOME/.local/share/applications"
 SCRAPER="./thegamesdbscraper.sh"
+LOGFILE="autoselect.log"
 
 # Parse arguments
 parseArgs "$@"
@@ -196,6 +243,28 @@ IMG_DEST="${SH_DEST}/artwork"
 if [ ! -e "$LAUNCHER" ]; then
     echo "Error: could not find ${LAUNCHER}."
     exit 1
+fi
+
+if [[ $AUTOSELECT_PARAM != "" ]]; then
+    if [[ "$RESCAN_FILE" == "$LOGFILE" ]]; then
+        echo "Rescan file will be saved under rescan.tmp"
+        cp -- "$RESCAN_FILE" "rescan.tmp"
+        RESCAN_FILE="rescan.tmp"
+    fi
+    if [[ -e "$LOGFILE" ]]; then
+        mv -- "$LOGFILE" "${LOGFILE}.old"
+    fi
+    touch "$LOGFILE"
+    echo "# Games processed on `date`" >> "$LOGFILE"
+    echo "# Syntax:" >> "$LOGFILE"
+    echo "# # /path/to/rom (or the game's name)" >> "$LOGFILE"
+    echo "# [ ] Your ROM (input for the scraper)" >> "$LOGFILE"
+    echo "#     Match picked by the scraper" >> "$LOGFILE"
+    echo "# " >> "$LOGFILE"
+    echo "# Titles with a checked box [x] or [X] will be rescanned after exiting the" >> "$LOGFILE"
+    echo "# editor. All other titles will not be rescanned. You can also manually" >> "$LOGFILE"
+    echo "# rescan games from a file using the --rescan parameter." >> "$LOGFILE"
+    echo "" >> "$LOGFILE"
 fi
 
 # Create necessary paths
@@ -212,9 +281,23 @@ for ROM in "${ROMS[@]}"; do
     ROM="`realpath "$ROM"`"
     if [ ! -e "$ROM" ]; then
         echo "Error: $ROM does not exist. Skipping..."
-        printUsage
-        exit 1
+    else
+        processRom "$ROM"
     fi
-    processRom "$ROM"
 done
 
+# Do we need to check the log and rescan titles?
+if [[ $AUTOSELECT_PARAM != "" && $NO_RESCAN != "true" ]]; then
+    echo ""
+    echo -e "${BOLDPURPLE}Processing games from logfile...${TEXTRESET}"
+    sleep 2
+    processGamesFromFile "$LOGFILE"
+fi
+
+# or rescan titles from a given rescan file?
+if [[ -e "$RESCAN_FILE" ]]; then
+    echo ""
+    echo -e "${BOLDPURPLE}Processing games from rescan file...${TEXTRESET}"
+    sleep 2
+    processGamesFromFile "$RESCAN_FILE"
+fi

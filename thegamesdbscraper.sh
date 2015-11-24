@@ -15,7 +15,7 @@ BOLDCYAN='\e[1;36m'
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-a|--autoselect] [-o|--output PATH] [-b|--basename IMAGE_BASENAME] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
+    echo "Usage: $APP_NAME [-a|--autoselect [--logfile LOGFILE]] [-o|--output PATH] [-b|--basename IMAGE_BASENAME] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
 }
 
 parseArgs() {
@@ -44,6 +44,11 @@ parseArgs() {
                 
             -a|--autoselect)
                 AUTOSELECT="true"
+                ;;
+            
+            --logfile)
+                LOGFILE="$2"
+                shift
                 ;;
             
             *)
@@ -211,6 +216,10 @@ searchGame() {
     if [ "$NUM_RESULTS" == "" ]; then
         NUM_RESULTS=20
     fi
+    GAME_PATH="$3"
+    if [ "$GAME_PATH" == "" ]; then
+        GAME_PATH="$GAME_INPUT"
+    fi
     # add the _ so we don't get transferred to the result page immediately
     GAME_URLSEARCH="`echo $GAME_INPUT | sed -e 's/ /+/g' -e 's/(.*)//g' -e 's/\[.*\]//g' -e "s/'//g" -e 's/&/%26/g'`+_"
     GAME_WITHOUT_DR="`echo $GAME_INPUT | sed -e 's/(.*)//g' -e 's/\[.*\]//g'`"
@@ -307,28 +316,34 @@ searchGame() {
     for MATCH in $SAME_PLATFORM; do
         MATCHLIST[$((MATCH - 1))]="${BOLDBLUE}${MATCHLIST[$((MATCH - 1))]}${TEXTRESET}"
     done
+    echo ""
 
     # Display the list
-    for MATCH in "${MATCHLIST[@]}"; do
-        echo -e $MATCH
-    done
+    if [[ $PREFERRED_CHOICE == "" || $AUTOSELECT != "true" ]]; then
+        for MATCH in "${MATCHLIST[@]}"; do
+            echo -e $MATCH
+        done
+        echo ""
+    fi
     
+    # Autoselect?
     if [[ $AUTOSELECT == "true" ]]; then
+        # Select game
         if [[ $PREFERRED_CHOICE != "" ]]; then
-            echo -e "\nSelecting ${BOLDGREEN}`echo "${MATCHLIST[$((PREFERRED_CHOICE - 1))]}" | sed 's/( \([0-9]\)/(\1/'`${TEXTRESET}"
+            echo -e "Selecting ${BOLDGREEN}`echo "${MATCHLIST[$((PREFERRED_CHOICE - 1))]}" | sed 's/( \([0-9]\)/(\1/'`${TEXTRESET}"
             CHOICE=${PREFERRED_CHOICE}
         else
-            echo -e "\nNo match found, skipping.\n"
+            echo -e "No match found, skipping.\n"
             CHOICE="-"
             BEST_MATCH_NAME="--no match found--"
         fi
         
         # Log
-        echo "[ ] $GAME_WITHOUT_DR" >> "$LOGFILE"
+        echo "# $GAME_PATH" >> "$LOGFILE"
+        echo "[ ] $GAME_INPUT" >> "$LOGFILE"
         echo "    $BEST_MATCH_NAME" >> "$LOGFILE"
         echo "" >> "$LOGFILE"
     else
-        echo ""
         echo -n "Pick match${PREFERRED_STRING} or enter new search ('-' to skip game, '@<num>' for <num> results): "
         read CHOICE
         echo ""
@@ -338,10 +353,11 @@ searchGame() {
 
 processGame() {
     # In order to get a default choice...
-    GAME="$1"
+    GAME_PATH="$1"
+    GAME="`echo "$GAME_PATH" | sed 's@.*/@@' | sed 's/\..\{2,5\}$//'`"
     matchPlatform
     
-    echo -e "\n${BOLDCYAN}Processing $GAME ($PLATFORM)${TEXTRESET}\n"
+    echo -e "\n${BOLDCYAN}Processing $GAME ($PLATFORM)${TEXTRESET}"
 
     if [ "${BASENAME}" != "" ]; then
         BASENAME="${BASENAME}-"
@@ -349,7 +365,7 @@ processGame() {
 
     GAME_SEARCH="$GAME"
     NUM_RESULTS=20
-    searchGame "$GAME_SEARCH" "$NUM_RESULTS"
+    searchGame "$GAME_SEARCH" "$NUM_RESULTS" "$GAME_PATH"
     
     until [[ $CHOICE =~ ^[0-9]+$ || $CHOICE == "" || $CHOICE == "-" ]]; do
         if [[ $CHOICE =~ ^@[0-9]+$ ]]; then
@@ -357,7 +373,7 @@ processGame() {
         else
             GAME_SEARCH="$CHOICE"
         fi
-        searchGame "$GAME_SEARCH" "$NUM_RESULTS"
+        searchGame "$GAME_SEARCH" "$NUM_RESULTS" "$GAME_PATH"
     done
 
     # Pick best match if none given
@@ -402,13 +418,6 @@ LOGFILE="autoselect.log"
 
 # Parse arguments
 parseArgs "$@"
-
-if [[ $AUTOSELECT == "true" ]]; then
-    if [[ -e "$LOGFILE" ]]; then
-        mv -- "$LOGFILE" "${LOGFILE}.old"
-    fi
-    touch "$LOGFILE"
-fi
 
 # Process games
 for GAME in "${GAMES[@]}"; do
