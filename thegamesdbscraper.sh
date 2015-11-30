@@ -15,7 +15,7 @@ BOLDCYAN='\e[1;36m'
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-a|--autoselect [--logfile LOGFILE]] [-o|--output PATH] [-b|--basename IMAGE_BASENAME] [-p|--platform PLATFORM] [-h|--help] GAME [GAME...]"
+    echo "Usage: $APP_NAME [-h|--help] [-a|--autoselect [--logfile LOGFILE]] [-o|--output PATH] [-b|--basename IMAGE_BASENAME] [-p|--platform PLATFORM] [-v|--verbose] GAME [GAME...]"
 }
 
 parseArgs() {
@@ -25,6 +25,15 @@ parseArgs() {
             -h|--help)
                 printUsage
                 exit 0
+                ;;
+                
+            -a|--autoselect)
+                AUTOSELECT="true"
+                ;;
+            
+            --logfile)
+                LOGFILE="$2"
+                shift
                 ;;
             
             -o|--output)
@@ -41,14 +50,9 @@ parseArgs() {
                 PLATFORM="$2"
                 shift
                 ;;
-                
-            -a|--autoselect)
-                AUTOSELECT="true"
-                ;;
             
-            --logfile)
-                LOGFILE="$2"
-                shift
+            -v|--verbose)
+                VERBOSE="true"
                 ;;
             
             *)
@@ -302,8 +306,14 @@ searchGame() {
             fi
         fi
         
+        if [[ $VERBOSE == "true" ]]; then
+            VERBOSE_STRING=" ($RATING)"
+        else
+            VERBOSE_STRING=""
+        fi
+        
         # Save result to MATCHLIST array
-        MATCHLIST[$((COUNT - 1))]="`printf "(%2d) %s (%s) %s%s\n" "$COUNT" "$NAME" "$SYSTEM" "$BOXART_STRING" "$CLEARLOGO_STRING"`"
+        MATCHLIST[$((COUNT - 1))]="`printf "(%2d) %s (%s) %s%s%s\n" "$COUNT" "$NAME" "$SYSTEM" "$BOXART_STRING" "$CLEARLOGO_STRING" "$VERBOSE_STRING"`"
         
         ((COUNT++))
     done

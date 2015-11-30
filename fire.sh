@@ -15,7 +15,7 @@ BOLDCYAN='\e[1;36m'
 APP_NAME="$0"
 
 printUsage() {
-    echo "Usage: $APP_NAME [-h|--help] [-r|--rescan FILE] [-a|--autoselect [--no-rescan]] [-o|--output PATH] [-O|--image-output PATH] [-p|--platform PLATFORM] [-f|--force] GAME [GAME...]"
+    echo "Usage: $APP_NAME [-h|--help] [-r|--rescan FILE] [-a|--autoselect [--no-rescan]] [-o|--output PATH] [-O|--image-output PATH] [-p|--platform PLATFORM] [-f|--force] [-v|--verbose] GAME [GAME...]"
 }
 
 parseArgs() {
@@ -57,6 +57,10 @@ parseArgs() {
                 
             -f|--force)
                 FORCE="true"
+                ;;
+            
+            -v|--verbose)
+                VERBOSE_PARAM="--verbose"
                 ;;
             
             *)
@@ -152,7 +156,7 @@ processRom() {
 
     # Get images
 #    echo "Calling: \"$SCRAPER\" ${AUTOSELECT_PARAM} --output \"${IMG_DEST}\" --basename \"$PLATFORM\" --platform \"$PLATFORM\" \"${ROMPATH}\""
-    "$SCRAPER" ${AUTOSELECT_PARAM} --output "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM" "${ROMPATH}"
+    "$SCRAPER" ${AUTOSELECT_PARAM} --output "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM" "${VERBOSE_PARAM}" "${ROMPATH}"
 
     IMAGE_PATH_BASE="${IMG_DEST}/${PLATFORM}-`echo "$GAMENAME_WITH_DR" | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
     IMAGE_PATH="${IMAGE_PATH_BASE}_clearlogo.png"
