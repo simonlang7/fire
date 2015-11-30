@@ -306,7 +306,7 @@ searchGame() {
             fi
         fi
         
-        if [[ $VERBOSE == "true" ]]; then
+        if [[ "$VERBOSE" == "true" ]]; then
             VERBOSE_STRING=" ($RATING)"
         else
             VERBOSE_STRING=""

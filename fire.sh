@@ -156,7 +156,7 @@ processRom() {
 
     # Get images
 #    echo "Calling: \"$SCRAPER\" ${AUTOSELECT_PARAM} --output \"${IMG_DEST}\" --basename \"$PLATFORM\" --platform \"$PLATFORM\" \"${ROMPATH}\""
-    "$SCRAPER" ${AUTOSELECT_PARAM} --output "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM" "${VERBOSE_PARAM}" "${ROMPATH}"
+    "$SCRAPER" ${AUTOSELECT_PARAM} --output "${IMG_DEST}" --basename "$PLATFORM" --platform "$PLATFORM" ${VERBOSE_PARAM} "${ROMPATH}"
 
     IMAGE_PATH_BASE="${IMG_DEST}/${PLATFORM}-`echo "$GAMENAME_WITH_DR" | sed -e 's/ /-/g' -e 's/[()]//g' -e 's/\[//g' -e 's/\]//g'`"
     IMAGE_PATH="${IMAGE_PATH_BASE}_clearlogo.png"
