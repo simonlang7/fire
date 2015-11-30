@@ -291,6 +291,7 @@ if [[ $AUTOSELECT_PARAM != "" && $NO_RESCAN != "true" ]]; then
     echo ""
     echo -e "${BOLDPURPLE}Processing games from logfile...${TEXTRESET}"
     sleep 2
+    FORCE="true"
     processGamesFromFile "$LOGFILE"
 fi
 
@@ -299,5 +300,6 @@ if [[ -e "$RESCAN_FILE" ]]; then
     echo ""
     echo -e "${BOLDPURPLE}Processing games from rescan file...${TEXTRESET}"
     sleep 2
+    FORCE="true"
     processGamesFromFile "$RESCAN_FILE"
 fi
