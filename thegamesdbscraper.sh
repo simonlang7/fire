@@ -116,6 +116,10 @@ matchPlatform() {
         md|MD|megadrive|genesis)
             MATCHED_PLATFORM="Sega Mega Drive"
             ;;
+        
+        scd|SCD|segacd|mcd|MCD|megacd)
+            MATCHED_PLATFORM="Sega CD"
+            ;;
             
         sat|SAT|saturn)
             MATCHED_PLATFORM="Sega Saturn"
