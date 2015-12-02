@@ -87,54 +87,92 @@ matchPlatform() {
     case $PLATFORM in
         nes|NES)
             MATCHED_PLATFORM="Nintendo Entertainment System (NES)"
+            PLATFORM="nes"
+            ;;
+        
+        sms|SMS)
+            MATCHED_PLATFORM="Sega Master System"
+            PLATFORM="sms"
             ;;
         
         snes|SNES)
             MATCHED_PLATFORM="Super Nintendo (SNES)"
-            ;;
-        
-        n64|N64)
-            MATCHED_PLATFORM="Nintendo 64"
-            ;;
-        
-        psx|PSX)
-            MATCHED_PLATFORM="Sony Playstation"
-            ;;
-        
-        gb|GB)
-            MATCHED_PLATFORM="Nintendo Game Boy"
-            ;;
-        
-        gbc|GBC)
-            MATCHED_PLATFORM="Nintendo Game Boy Color"
-            ;;
-        
-        gba|GBA)
-            MATCHED_PLATFORM="Nintendo Game Boy Advance"
+            PLATFORM="snes"
             ;;
             
         md|MD|megadrive|genesis)
             MATCHED_PLATFORM="Sega Mega Drive"
+            PLATFORM="md"
             ;;
         
         scd|SCD|segacd|mcd|MCD|megacd)
             MATCHED_PLATFORM="Sega CD"
+            PLATFORM="scd"
+            ;;
+        
+        32x|32X)
+            MATCHED_PLATFORM="Sega 32X"
+            PLATFORM="32x"
+            ;;
+        
+        n64|N64)
+            MATCHED_PLATFORM="Nintendo 64"
+            PLATFORM="n64"
+            ;;
+        
+        psx|PSX)
+            MATCHED_PLATFORM="Sony Playstation"
+            PLATFORM="psx"
             ;;
             
         sat|SAT|saturn)
             MATCHED_PLATFORM="Sega Saturn"
+            PLATFORM="sat"
             ;;
         
-        nds|NDS)
-            MATCHED_PLATFORM="Nintendo DS"
+        dc|DC)
+            MATCHED_PLATFORM="Sega Dreamcast"
+            PLATFORM="dc"
             ;;
         
         ps2|PS2)
             MATCHED_PLATFORM="Sony Playstation 2"
+            PLATFORM="ps2"
+            ;;
+        
+        ngc|NGC)
+            MATCHED_PLATFORM="Nintendo GameCube"
+            PLATFORM="ngc"
+            ;;
+        
+        gb|GB)
+            MATCHED_PLATFORM="Nintendo Game Boy"
+            PLATFORM="gb"
+            ;;
+        
+        sgg|SGG|gamegear)
+            MATCHED_PLATFORM="Sega Game Gear"
+            PLATFORM="sgg"
+            ;;
+        
+        gbc|GBC)
+            MATCHED_PLATFORM="Nintendo Game Boy Color"
+            PLATFORM="gbc"
+            ;;
+        
+        gba|GBA)
+            MATCHED_PLATFORM="Nintendo Game Boy Advance"
+            PLATFORM="gba"
+            ;;
+        
+        nds|NDS)
+            MATCHED_PLATFORM="Nintendo DS"
+            PLATFORM="nds"
             ;;
         
         psp|PSP)
             MATCHED_PLATFORM="Sony PSP"
+            PLATFORM="psp"
             ;;
             
         *)
