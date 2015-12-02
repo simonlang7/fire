@@ -171,7 +171,8 @@ matchPlatform() {
             ;;
         
         psp|PSP)
-            MATCHED_PLATFORM="Sony PSP"
+            MATCHED_PLATFORM[0]="Sony PSP"
+            MATCHED_PLATFORM[1]="Sony Playstation Portable"
             PLATFORM="psp"
             ;;
             
@@ -336,17 +337,19 @@ searchGame() {
         ((RATING += STR_LD_RATING * 1))
         
         # We only consider it a good match if the platform is the same
-        if [ "$MATCHED_PLATFORM" == "$SYSTEM" ]; then
-            SAME_PLATFORM="$COUNT $SAME_PLATFORM"
-            # If we don't have any good match yet, this'll be it.
-            # Otherwise, it's only better if the full name is contained (see above) AND the string length distance is better
-            if [ "$PREFERRED_CHOICE" == "" -o "$RATING" -gt "$BEST_RATING" ]; then
-                PREFERRED_CHOICE=$COUNT
-                PREFERRED_STRING=" ($COUNT)"
-                BEST_RATING="$RATING"
-                BEST_MATCH_NAME="$NAME ${BOXART_STRING}${CLEARLOGO_STRING}"
+        for MATCHED_P in "${MATCHED_PLATFORM[@]}"; do
+            if [ "$MATCHED_P" == "$SYSTEM" ]; then
+                SAME_PLATFORM="$COUNT $SAME_PLATFORM"
+                # If we don't have any good match yet, this'll be it.
+                # Otherwise, it's only better if the full name is contained (see above) AND the string length distance is better
+                if [ "$PREFERRED_CHOICE" == "" -o "$RATING" -gt "$BEST_RATING" ]; then
+                    PREFERRED_CHOICE=$COUNT
+                    PREFERRED_STRING=" ($COUNT)"
+                    BEST_RATING="$RATING"
+                    BEST_MATCH_NAME="$NAME ${BOXART_STRING}${CLEARLOGO_STRING}"
+                fi
             fi
-        fi
+        done
         
         if [[ "$VERBOSE" == "true" ]]; then
             VERBOSE_STRING=" ($RATING)"
