@@ -56,6 +56,7 @@ launchGame() {
         scd|SCD|segacd|megacd)
             LIBRETRO_CORE="genesis_plus_ex"
             APPLICATION="retroarch"
+            ;;
             
         sat|saturn)
             LIBRETRO_CORE="yabause"
