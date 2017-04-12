@@ -183,6 +183,7 @@ matchPlatform() {
 }
 
 # Replace roman with arabic numbers for comparison (till 15 should be enough for now...)
+# TODO: Rewrite properly
 romanToLatin() {
     LATIN_STR="`echo $1 | sed -e 's/II/2/g' -e 's/III/3/g' -e 's/IV/4/g' -e 's/V$/5/' -e 's/ V / 5 /g' -e 's/ V:/ 5:/g' -e 's/VI/6/g' -e 's/VII/7/g' -e 's/VIII/8/g' -e 's/IX/9/g' -e 's/ X$/ 10/' -e 's/ X / 10 /g' -e 's/ X:/ 10:/g' -e 's/XI/11/g' -e 's/XII/12/g' -e 's/XIII/13/g' -e 's/XIV/14/g' -e 's/XV/15/g'`"
 }
@@ -317,11 +318,13 @@ searchGame() {
         fi
         
         # Now find out whether this is the best match we can find
-        numberContained "$NAME" "${GAME_WITHOUT_DR}"
-        ((RATING = NUMBER_CONTAINED_RATING * 100000))
+		RATING=0
+		# TODO: Rewrite romanToLatin properly
+        #numberContained "$NAME" "${GAME_WITHOUT_DR}"
+        #((RATING += NUMBER_CONTAINED_RATING * 100000))
 
-        numberContained "${GAME_WITHOUT_DR}" "$NAME"
-        ((RATING += NUMBER_CONTAINED_RATING * 10000))
+        #numberContained "${GAME_WITHOUT_DR}" "$NAME"
+        #((RATING += NUMBER_CONTAINED_RATING * 10000))
         
         stringContained "$NAME" "$GAME_WITHOUT_DR"
         ((RATING += STRING_CONTAINED_RATING * 1000))
